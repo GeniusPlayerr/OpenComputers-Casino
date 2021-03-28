@@ -51,7 +51,7 @@ casino.reward = function(money)
     money = math.floor(money + 0.5)
     if money > 0 then
         local allItems = component.diamond.getAllStacks()
-        for k,v in pairs(allItems) do
+        for k, v in pairs(allItems) do
             item = v.basic()
             if item and not item.nbt_hash and item.id == CURRENCY.id then
                 money = money - component.diamond.pushItem(settings.CONTAINER_GAIN, k, money)
@@ -63,7 +63,7 @@ end
 casino.takeMoney = function(money)
     if not CURRENCY.id then
         return true
-    end 
+    end
 
     if CURRENCY.max and currentBetSize + money > CURRENCY.max then
         return false, "Превышен максимум"
@@ -104,15 +104,16 @@ casino.rewardManually = function(player, id, dmg, count)
 end
 
 casino.rewardItem = function(id, dmg, count)
-    local items = meInterface.getAvailableItems()
-    for i=1,#items do
-        if (items[i].fingerprint.id == id and items[i].fingerprint.dmg == dmg and items[i].size >= count) then
-            item = items[i]
-            meInterface.exportItem(items[i].fingerprint,"UP" , count)
-            return true
+    if money > 0 then
+        local allItems = component.diamond.getAllStacks()
+        for k, v in pairs(allItems) do
+            item = v.basic()
+            if item and item.id == id and item.dmg == dmg then
+                count = count - component.diamond.pushItem(settings.CONTAINER_GAIN, k, count)
+            end
         end
     end
-    return false
+    return (count == 0)
 end
 
 casino.downloadFile = function(url, saveTo, forceRewrite)
@@ -136,11 +137,11 @@ end
 casino.getCurrencyInStorage = function(currency)
     if not currency.id then
         return -1
-    end 
-    local item = {id=currency.id, dmg=currency.dmg}
+    end
+    local item = { id = currency.id, dmg = currency.dmg }
     local qty = 0
     local allItems = component.diamond.getAllStacks()
-    for k,v in pairs(allItems) do
+    for k, v in pairs(allItems) do
         item = v.basic()
         if item and not item.nbt_hash and item.id == CURRENCY.id and item.dmg == CURRENCY.dmg then
             qty = qty + item.qty
