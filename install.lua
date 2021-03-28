@@ -1,4 +1,4 @@
-local REPOSITOTY = "https://raw.githubusercontent.com/krovyaka/OpenComputers-Casino/feature/NewGame/OpenChest/"
+local REPOSITOTY = "https://raw.githubusercontent.com/salimAbdulIt/OpenComputers-Casino/master"
 
 local shell = require("shell")
 shell.execute("wget -fq " .. REPOSITOTY .. "/launcher.lua /home/1.lua")

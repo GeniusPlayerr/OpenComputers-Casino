@@ -3,12 +3,26 @@ local event = require("event")
 local shell = require("shell")
 local unicode = require("unicode")
 local settings = require("settings")
+local computer = require('computer')
 local games
 local currencies
 local image
 local buffer
+local colorlib
+
+REPOSITORY = settings.REPOSITORY
+
+CURRENT_APP = nil
+SHOULD_INTERRUPT = false
 
 event.shouldInterrupt = function()
+    if SHOULD_INTERRUPT then
+        SHOULD_INTERRUPT = false
+        if CURRENT_APP then
+            CURRENT_APP = nil
+            return true
+        end
+    end
     return false
 end
 
@@ -18,7 +32,6 @@ local state = {
     currencyDropdown = false
 }
 
-REPOSITORY = settings.REPOSITORY
 
 local requiredDirectories = { "/lib/FormatModules", "/home/images/", "/home/images/games_logo", "/home/images/currencies", "/home/apps" }
 
@@ -95,14 +108,30 @@ end
 
 local function drawCurrency(x, y, currency, current)
     buffer.drawRectangle(x, y, 46, 3, --[[current and 0xA890AA or--]] 0xE3E3E3, 0, " ")
-    buffer.drawText(x + 8, y    , 0, "Валюта: " .. currency.name)
+    buffer.drawText(x + 8, y    , 0, currency.name)
     buffer.drawText(x + 8, y + 1, 0, "Максимальная ставка: " .. (currency.max or "-"))
-    buffer.drawText(x + 8, y + 2, 0, "Имеется у казино: " .. casino.getCurrencyInStorage(currency))
-    local img = currency.image
-    if img then
-        casino.downloadFile(REPOSITORY .. "/resources/images/currencies/" .. img, "/home/images/currencies/" .. img)
-        buffer.drawImage(x, y, image.load("/home/images/currencies/" .. img)) -- 6x3
+    buffer.drawText(x + 8, y + 2, 0, "У казино: " .. casino.getCurrencyInStorage(currency) .. " шт.")
+
+    local color = currency.color or 0xE3E3E3
+    local darkColor = colorlib.transition(color, 0, 0.1)
+    if currency.model == 'INGOT' then
+        buffer.drawSemiPixelLine(x, y * 2 + 1, x + 2, y * 2 + 1, darkColor)
+        buffer.drawSemiPixelLine(x + 3, y * 2, x + 5, y * 2, darkColor)
+        buffer.drawSemiPixelLine(x, y * 2 + 2, x + 2, y * 2 + 2, color)
+        buffer.drawSemiPixelLine(x + 3, y * 2 + 1, x + 5, y * 2 + 1, color)
+        buffer.drawSemiPixelLine(x, y * 2 + 3, x + 2, y * 2 + 3, darkColor)
+        buffer.drawSemiPixelLine(x + 3, y * 2 + 2, x + 5, y * 2 + 2, darkColor)
+    elseif currency.model == 'DUST' then
+        buffer.drawSemiPixelRectangle(x + 2, y * 2 + 1, 3, 2, color)
+        buffer.drawSemiPixelRectangle(x + 1, y * 2 + 3, 5, 1, color)
+        buffer.drawSemiPixelLine(x, y * 2 + 3, x + 3, y * 2, darkColor)
+        buffer.drawSemiPixelLine(x + 3, y * 2, x + 6, y * 2 + 3, darkColor)
+        buffer.drawSemiPixelLine(x + 1, y * 2 + 4, x + 5, y * 2 + 4, darkColor)
+    elseif currency.model == 'BLOCK' then
+        buffer.drawSemiPixelRectangle(x, y * 2 - 1, 6, 6, darkColor)
+        buffer.drawSemiPixelRectangle(x + 1, y * 2, 4, 4, color)
     end
+
 end
 
 local function drawStatic()
@@ -173,6 +202,46 @@ local function drawDynamic()
     buffer.drawChanges()
 end
 
+local function removeUsers()
+    local users = table.pack(computer.users())
+    for i = 1, #users do
+        if not isAdmin(users[i]) then
+            computer.removeUser(users[i])
+        end
+    end
+end
+
+local function onPimPlayerOff(_, name)
+    SHOULD_INTERRUPT = true
+end
+
+local function handlePim()
+    if casino.container.getInventoryName() == 'pim' then
+        removeUsers()
+        casino.setCurrency(currencies[1])
+        buffer.setResolution(32, 9)
+        buffer.drawRectangle(1, 1, 32, 9, 0xFFFFFF, 0x0, ' ')
+        buffer.drawText(5, 3, 0x000000, 'Наступите, чтобы начать')
+        buffer.drawText(15, 6, 0x000000, ' ||')
+        buffer.drawText(15, 7, 0x000000, ' ||')
+        buffer.drawText(15, 8, 0x000000, '\\  /')
+        buffer.drawText(15, 9, 0x000000, ' \\/')
+        buffer.drawChanges()
+        while casino.container.getInventoryName() == 'pim' do
+            os.sleep(0.5)
+        end
+        computer.addUser(casino.container.getInventoryName())
+        buffer.drawRectangle(1, 1, 32, 9, 0xFFFFFF, 0x0, ' ')
+        drawRectangleWithCenterText(1, 4, 32, 1, casino.container.getInventoryName(), 0xFFFFFF, 0x0)
+        buffer.drawText(2, 6, 0xFF0000, 'Не покидайте PIM до конца игры')
+        buffer.drawChanges()
+        os.sleep(2)
+        drawStatic()
+        drawDynamic()
+        buffer.drawChanges()
+    end
+end
+
 local function initLauncher()
     for i = 1, #requiredDirectories do
         shell.execute("md " .. requiredDirectories[i])
@@ -184,6 +253,7 @@ local function initLauncher()
     currencies = require("currencies")
     image = require("image")
     buffer = require("doubleBuffering")
+    colorlib = require("color")
     casino.setCurrency(currencies[1])
 end
 
@@ -192,10 +262,12 @@ buffer.flush()
 drawStatic()
 drawDynamic()
 
+if settings.PAYMENT_METHOD == 'PIM' then event.listen('player_off', onPimPlayerOff) end
+
 while true do
-    :: continue ::
-    local e, _, x, y, _, p = event.pull("touch")
-    if (e == "touch") then
+    :: continue :: -- В Lua отсутствует ключевое слово continiue
+    local e, _, x, y, _, p = event.pull(1)
+    if e == "touch" then
         if state.devMode and not isAdmin(p) then
             goto continue
         end
@@ -210,6 +282,7 @@ while true do
             end
             state.currencyDropdown = false
             drawDynamic()
+            goto continue
         elseif x >= 2 and y >= 46 and x <= 92 and y <= 50 and state.selection > 0 then
             state.currencyDropdown = true
             drawDynamic()
@@ -237,7 +310,9 @@ while true do
             else
                 if selection.available then
                     casino.downloadFile(REPOSITORY .. "/apps/" .. selection.file, "/home/apps/" .. selection.file)
+                    CURRENT_APP = selection.title
                     local result, errorMsg = pcall(loadfile("/home/apps/" .. selection.file))
+                    CURRENT_APP = nil
                     casino.gameIsOver()
                     drawStatic()
                     drawDynamic()
@@ -287,4 +362,5 @@ while true do
             drawDynamic()
         end
     end
+    if settings.PAYMENT_METHOD == 'PIM' then handlePim() end
 end

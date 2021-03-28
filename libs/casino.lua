@@ -1,9 +1,10 @@
+local settings = require("settings")
 local casino = {}
 local component = require("component")
 local shell = require("shell")
 local filesystem = require("filesystem")
+local meInterface = component.diamond
 local chest = component.chest
-local meInterface = component.me_interface
 local io = require("io")
 local serialization = require("serialization")
 local CURRENCY = {
@@ -16,7 +17,20 @@ local CURRENCY = {
 
 local currentBetSize = 0
 
-local chestSize = chest.getInventorySize()
+
+casino.container = nil
+local containerSize = 0
+
+if settings.PAYMENT_METHOD == 'CHEST' then
+    casino.container = component.chest
+    containerSize = casino.container.getInventorySize()
+elseif settings.PAYMENT_METHOD == 'PIM' then
+    casino.container = component.pim
+    containerSize = 40
+elseif settings.PAYMENT_METHOD == 'crystal' then
+    casino.container = component.crystal
+    containerSize = casino.container.getInventorySize()
+end
 
 casino.splitString = function(inputStr, sep)
     if sep == nil then
@@ -35,11 +49,14 @@ casino.reward = function(money)
     end
 
     money = math.floor(money + 0.5)
-    while money > 0 do
-        local executed, g = pcall(function()
-            return meInterface.exportItem(CURRENCY, "UP", money < 64 and money or 64).size
-        end)
-        money = money - (money < 64 and money or 64)
+    if money > 0 then
+        local allItems = component.diamond.getAllStacks()
+        for k,v in pairs(allItems) do
+            item = v.basic()
+            if item and not item.nbt_hash and item.id == CURRENCY.id then
+                money = money - component.diamond.pushItem(settings.CONTAINER_GAIN, k, money)
+            end
+        end
     end
 end
 
@@ -53,10 +70,10 @@ casino.takeMoney = function(money)
     end
 
     local sum = 0
-    for i = 1, chestSize do
-        local item = chest.getStackInSlot(i)
-        if item and not item.nbt_hash and item.id == CURRENCY.id then
-            sum = sum + chest.pushItem('DOWN', i, money - sum)
+    for i = 1, containerSize do
+        local item = casino.container.getStackInSlot(i)
+        if item and not item.nbt_hash and item.id == CURRENCY.id and item.dmg == CURRENCY.dmg then
+            sum = sum + casino.container.pushItem(settings.CONTAINER_PAY, i, money - sum)
         end
     end
     if sum < money then
@@ -121,8 +138,15 @@ casino.getCurrencyInStorage = function(currency)
         return -1
     end 
     local item = {id=currency.id, dmg=currency.dmg}
-    local detail = meInterface.getItemDetail(item)
-    return detail and detail.basic().qty or 0
+    local qty = 0
+    local allItems = component.diamond.getAllStacks()
+    for k,v in pairs(allItems) do
+        item = v.basic()
+        if item and not item.nbt_hash and item.id == CURRENCY.id and item.dmg == CURRENCY.dmg then
+            qty = qty + item.qty
+        end
+    end
+    return qty or 0
 end
 
 
