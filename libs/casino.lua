@@ -3,7 +3,7 @@ local casino = {}
 local component = require("component")
 local shell = require("shell")
 local filesystem = require("filesystem")
-local meInterface = component.me_interface
+local meInterface = component.diamond
 
 local CURRENCY = {
     name = nil,
@@ -25,6 +25,9 @@ if settings.PAYMENT_METHOD == 'CHEST' then
 elseif settings.PAYMENT_METHOD == 'PIM' then
     casino.container = component.pim
     containerSize = 40
+elseif settings.PAYMENT_METHOD == 'crystal' then
+    casino.container = component.crystal
+    containerSize = casino.container.getInventorySize()
 end
 
 casino.splitString = function(inputStr, sep)
@@ -45,10 +48,12 @@ casino.reward = function(money)
 
     money = math.floor(money + 0.5)
     while money > 0 do
-        local executed, g = pcall(function()
-            return meInterface.exportItem(CURRENCY, settings.CONTAINER_GAIN, money < 64 and money or 64).size
-        end)
-        money = money - (money < 64 and money or 64)
+        local allItems = component.diamond.getAllStacks()
+        for k,item in pairs(allItems) do 
+            if item and not item.nbt_hash and item.id == CURRENCY.id then
+                money = money - component.diamond.pushItem(settings.CONTAINER_PAY, k, money - sum)
+            end
+        end
     end
 end
 
@@ -64,7 +69,7 @@ casino.takeMoney = function(money)
     local sum = 0
     for i = 1, containerSize do
         local item = casino.container.getStackInSlot(i)
-        if item and not item.nbt_hash and item.id == CURRENCY.id then
+        if item and not item.nbt_hash and item.id == CURRENCY.id and item.dmg == CURRENCY.dmg then
             sum = sum + casino.container.pushItem(settings.CONTAINER_PAY, i, money - sum)
         end
     end
@@ -99,8 +104,14 @@ casino.getCurrencyInStorage = function(currency)
         return -1
     end 
     local item = {id=currency.id, dmg=currency.dmg}
-    local detail = meInterface.getItemDetail(item)
-    return detail and detail.basic().qty or 0
+    local qty = 0
+    local allItems = component.diamond.getAllStacks()
+    for k,item in pairs(allItems) do 
+        if item and not item.nbt_hash and item.id == CURRENCY.id and item.dmg == CURRENCY.dmg then
+            qty = qty + item.qty
+        end
+    end
+    return qty or 0
 end
 
 
