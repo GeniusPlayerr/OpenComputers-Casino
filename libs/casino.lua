@@ -4,7 +4,6 @@ local component = require("component")
 local shell = require("shell")
 local filesystem = require("filesystem")
 local meInterface = component.diamond
-local chest = component.chest
 local io = require("io")
 local serialization = require("serialization")
 local CURRENCY = {
