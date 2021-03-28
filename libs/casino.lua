@@ -103,7 +103,7 @@ casino.rewardManually = function(player, id, dmg, count)
 end
 
 casino.rewardItem = function(id, dmg, count)
-    if money > 0 then
+    if count > 0 then
         local allItems = component.diamond.getAllStacks()
         for k, v in pairs(allItems) do
             item = v.basic()
