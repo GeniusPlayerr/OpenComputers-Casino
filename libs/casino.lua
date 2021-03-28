@@ -47,7 +47,7 @@ casino.reward = function(money)
     end
 
     money = math.floor(money + 0.5)
-    while money > 0 do
+    if money > 0 then
         local allItems = component.diamond.getAllStacks()
         for k,v in pairs(allItems) do 
             item = v.basic()
