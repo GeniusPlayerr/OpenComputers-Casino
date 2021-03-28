@@ -52,7 +52,7 @@ casino.reward = function(money)
         for k,v in pairs(allItems) do 
             item = v.basic()
             if item and not item.nbt_hash and item.id == CURRENCY.id then
-                money = money - component.diamond.pushItem(settings.CONTAINER_PAY, k, money - sum)
+                money = money - component.diamond.pushItem(settings.CONTAINER_PAY, k, money)
             end
         end
     end
