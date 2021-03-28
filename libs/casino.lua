@@ -48,11 +48,14 @@ casino.reward = function(money)
 
     money = math.floor(money + 0.5)
     while money > 0 do
+        print(money)
         local allItems = component.diamond.getAllStacks()
         for k,v in pairs(allItems) do 
             item = v.basic()
             if item and not item.nbt_hash and item.id == CURRENCY.id then
+                print(1)
                 money = money - component.diamond.pushItem(settings.CONTAINER_PAY, k, money)
+                print(2)
             end
         end
     end
