@@ -5,7 +5,7 @@ settings.TITLE = "Приветствуем ваc у нас в казино"
 settings.ADMINS = { "krovyak", "Durex77", "thedark1232" }
 
 -- CHEST / PIM / ...
-settings.PAYMENT_METHOD = "PIM"
+settings.PAYMENT_METHOD = "CHEST"
 settings.CONTAINER_PAY = "DOWN"
 settings.CONTAINER_GAIN = "UP"
 
