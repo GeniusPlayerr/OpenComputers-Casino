@@ -166,7 +166,7 @@ function win()
     dragging = false
     setGame(false)
     casino.reward(1)
-    Log(player .. " победил. : "
+    Log(player .. " победил. : ")
 end
 
 gpu.setResolution(118,39)
