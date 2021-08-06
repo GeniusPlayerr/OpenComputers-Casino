@@ -3,11 +3,18 @@ local event = require("event")
 local term = require("term")
 local gpu = component.gpu
 local unicode = require("unicode")
-
+local io = require('io')
 local dragging,game,player,lastx,ending,cooldown,flag = false,false,"",0,0,0,true
 local map,start,finish,currentPos = {},{1,17},{35,17}, {1,17}
 
 local casino = require("casino")
+
+
+local file = io.open('snake-cooldown', 'r')
+if (file) then
+    cooldown = tonumber(file:read("*a"))
+    file:close();
+end
 
 function startGenerate()
   for i=1,35 do
@@ -110,12 +117,17 @@ function setGame(status)
     gpu.fill(81,33,34,5," ")
     gpu.set(95,35,"Играть")
   end
+    gpu.setBackground(0x990000)
+    gpu.setForeground(0xFFFFFF)
+    gpu.fill(81, 27, 34, 5, " ")
+    gpu.set(95, 29, "Выход")
+    gpu.setForeground(0x000000)
 end
-local loglist = {"","","","","","","","","","","","","","","","",""}
+local loglist = {"","","","","","","","","","",""}
 function Log(message)
-  loglist[16] = unicode.sub(message .. "                                  ",1,34)
+  loglist[10] = unicode.sub(message .. "                                  ",1,34)
   gpu.setBackground(0xdddddd)
-  for i = 1,15 do
+  for i = 1,9 do
     loglist[i] = loglist[i+1]
     gpu.set(81,16+i,loglist[i])
   end
@@ -176,7 +188,7 @@ gpu.setBackground(0xffffff)
 gpu.fill(3,2,74,37," ")
 gpu.fill(79,2,38,37," ")
 gpu.setBackground(0xdddddd)
-gpu.fill(81,17,34,15," ")
+gpu.fill(81,17,34,9," ")
 gpu.setBackground(0xffffff)
 gpu.setForeground(0x0000ff)
 gpu.set(80,2,"Правила игры:")
@@ -198,10 +210,22 @@ local a = emptyarray()
 setGame(false)
 drawField(false)
 while true do
-  local e,_,left,top,_,p =event.pull("touch")
-  if (left>80) and (left<115) and (top>25) and (top<38) then
+    while (cooldown - os.time())>=0 do
+        gpu.setBackground(0xaaaaaa)
+        gpu.fill(81,33,34,5," ") gpu.set(91,35,"Кулдаун " .. math.floor((cooldown - os.time())/72) .. " с.")
+        local e,_,left,top,_,p =event.pull(1, "touch")
+        if e and (left>80) and (left<115) and (top>27) and (top<32) then
+            error("Exit by request")
+        end
+    end
+    setGame(false)
+    local e,_,left,top,_,p =event.pull("touch")
+  if (left>80) and (left<115) and (top>32) and (top<38) then
     ending = os.time()+4320 player = p drawField(true) setGame(true) lastx=0
   end
+    if (left>80) and (left<115) and (top>27) and (top<32) then
+        error("Exit by request")
+    end
   while game do
     local e,_,left,top,_,p2 =event.pullMultiple(1,"touch","drag","drop")
     if(os.time() >= ending) then lose("не успел") end
@@ -211,12 +235,12 @@ while true do
       if(e == "drag") and (dragging) then drag(left,top) end
     end
 
-    if (not game) then cooldown = os.time() + 4320 p = nil dragging = false end
-  end
-  while (cooldown - os.time())>=0 do
-    gpu.setBackground(0xaaaaaa)
-    gpu.fill(81,33,34,5," ") gpu.set(91,35,"Кулдаун " .. math.floor((cooldown - os.time())/72) .. " с.")
-    os.sleep(1)
+    if (not game) then
+        cooldown = os.time() + 4320 p = nil dragging = false
+        file = io.open('snake-cooldown', 'w')
+        file:write(cooldown)
+        file:close();
+    end
   end
   if(p == nil) then setGame(false) end
 end

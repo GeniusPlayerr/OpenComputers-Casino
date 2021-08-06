@@ -131,7 +131,7 @@ table.insert(games, {
     title = "Змейка",
     file = "game_snake.lua",
     available = true,
-    image = "game_One_armed_creeper.pic",
+    image = "game_Chests.pic",
     author = "krovyaka",
     description = "Классическая слот-машина с одной линией. Коэффициенты \n" ..
             "наград рассчитаны таким образом, чтобы, в среднем, 96%\n"..
@@ -149,7 +149,7 @@ table.insert(games, {
     title = "Openchest",
     file = "game_Openchest.lua",
     available = false,
-    image = "game_One_armed_creeper.pic",
+    image = "game_Chests.pic",
     author = "krovyaka",
     description = "Классическая слот-машина с одной линией. Коэффициенты \n" ..
             "наград рассчитаны таким образом, чтобы, в среднем, 96%\n"..
