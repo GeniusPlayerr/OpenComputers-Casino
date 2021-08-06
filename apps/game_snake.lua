@@ -287,7 +287,7 @@ while true do
         player = p
         drawField(true)
         setGame(true)
-        А = 0
+        lastx = 0
         lasty = 0
     end
     if (left > 80) and (left < 115) and (top > 27) and (top < 32) then
