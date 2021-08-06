@@ -4,7 +4,7 @@ local term = require("term")
 local gpu = component.gpu
 local unicode = require("unicode")
 local io = require('io')
-local dragging,game,player,lastx,ending,cooldown,flag = false,false,"",0,0,0,true
+local dragging,game,player,lastx,lasty,ending,cooldown,flag = false,false,"",0,0,0,0,true
 local map,start,finish,currentPos = {},{1,17},{35,17}, {1,17}
 
 local casino = require("casino")
@@ -132,6 +132,7 @@ function Log(message)
     gpu.set(81,16+i,loglist[i])
   end
 end
+
 function drag(left,top)
   local x,y = math.floor((left-3)/2),(top-2)
   if(x<1) or (x>35) or (y<1) or (y>35) then lose("ушёл за поле") return end
@@ -143,8 +144,10 @@ end
 function drawPoint(x,y,color)
   gpu.setBackground(color)
   gpu.fill(3+x*2,2+y,2,1," ")
-  if(x-lastx)>2 then lose("поторопился") end
+    if math.abs(x-lastx)>2 then lose("поторопился") end
+    if math.abs(y-lasty)>2 then lose("поторопился") end
   lastx = x
+    lasty = y
 end
 function drawField()
 	generateMap()
@@ -221,7 +224,7 @@ while true do
     setGame(false)
     local e,_,left,top,_,p =event.pull("touch")
   if (left>80) and (left<115) and (top>32) and (top<38) then
-    ending = os.time()+4320 player = p drawField(true) setGame(true) lastx=0
+    ending = os.time()+4320 player = p drawField(true) setGame(true) lastx=0 lasty=0
   end
     if (left>80) and (left<115) and (top>27) and (top<32) then
         error("Exit by request")
