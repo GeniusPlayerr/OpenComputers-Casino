@@ -287,8 +287,6 @@ while true do
         player = p
         drawField(true)
         setGame(true)
-        lastx = 0
-        lasty = 0
     end
     if (left > 80) and (left < 115) and (top > 27) and (top < 32) then
         error("Exit by request")
@@ -303,8 +301,7 @@ while true do
                 lose("отпустил мышь")
             end
             if (e == "touch") and ((left == 5) or (left == 6)) and (top == 19) then
-                lastx = left
-                lasty = top
+                lastx, lasty = math.floor((left - 3) / 2), (top - 2)
                 dragging = true
             end
             if (e == "drag") and (dragging) then
