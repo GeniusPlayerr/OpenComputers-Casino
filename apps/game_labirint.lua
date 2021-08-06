@@ -303,6 +303,8 @@ while true do
                 lose("отпустил мышь")
             end
             if (e == "touch") and ((left == 5) or (left == 6)) and (top == 19) then
+                lastx = left
+                lasty = top
                 dragging = true
             end
             if (e == "drag") and (dragging) then
