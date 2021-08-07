@@ -270,6 +270,9 @@ end
 local a = emptyarray()
 setGame(false)
 drawField(false)
+if (cooldown > (os.time() + 4320)) then
+    cooldown = os.time();
+end
 while true do
     while (cooldown - os.time()) >= 0 do
         gpu.setBackground(0xaaaaaa)
