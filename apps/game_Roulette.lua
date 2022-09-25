@@ -18,7 +18,7 @@ local function message(msg)
     buffer.drawRectangle(3, 23, 71, 9, 0x002f15, 0xffffff, " ")
     for i = 1, #consoleLines do
         buffer.drawText(4, 32 - i, (15 - #consoleLines + i) * 0x111111, consoleLines[i])
-    end
+    endw
     buffer.drawChanges()
 end
 
